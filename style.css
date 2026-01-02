@@ -143,3 +143,9 @@ select{
   .layout{ grid-template-columns: 1fr; }
   #labelCanvas{ height: 520px; }
 }
+
+.grid2{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:10px;
+}

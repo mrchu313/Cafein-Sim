@@ -6,6 +6,46 @@ const sizeSel = document.getElementById("size");
 const shotsSel = document.getElementById("shots");
 const caffeineSel = document.getElementById("caffeine");
 const milkSel = document.getElementById("milk");
+// ===== Syrup/Sauce dropdown refs =====
+const SAUCE_KEYS  = ["M","WM","CAR","PUMPKIN","BS"];
+const SYRUP_KEYS  = ["V","LAV","ROSE","HONEY","FLAVOR"];
+const SIMPLE_KEYS = ["SIMPLE"];
+
+const sauceEls = Object.fromEntries(SAUCE_KEYS.map(k => [k, document.getElementById(`sauce_${k}`)]));
+const syrupEls = Object.fromEntries(SYRUP_KEYS.map(k => [k, document.getElementById(`syrup_${k}`)]));
+const simpleEls = Object.fromEntries(SIMPLE_KEYS.map(k => [k, document.getElementById(`simple_${k}`)]));
+
+function populateSelect(sel){
+  if (!sel) return;
+  let html = "";
+  for (let v = 0; v <= 6.001; v += 0.5){
+    const n = Number(v.toFixed(1));
+    html += `<option value="${n}">${n}</option>`;
+  }
+  sel.innerHTML = html;
+  sel.value = "0";
+}
+
+function populateAllPumps(){
+  Object.values(sauceEls).forEach(populateSelect);
+  Object.values(syrupEls).forEach(populateSelect);
+  Object.values(simpleEls).forEach(populateSelect);
+}
+populateAllPumps();
+
+function resetAllPumps(){
+  for (const el of [...Object.values(sauceEls), ...Object.values(syrupEls), ...Object.values(simpleEls)]){
+    if (el) el.value = "0";
+  }
+}
+
+function readAllPumps(){
+  const out = {};
+  for (const k of SAUCE_KEYS) out[k] = Number(sauceEls[k]?.value || 0);
+  for (const k of SYRUP_KEYS) out[k] = Number(syrupEls[k]?.value || 0);
+  for (const k of SIMPLE_KEYS) out[k] = Number(simpleEls[k]?.value || 0);
+  return out;
+}
 
 let currentOrder = null;
 
@@ -199,6 +239,8 @@ document.getElementById("newOrder").onclick = () => {
   currentOrder = randomOrder();
   renderTicket();
   resultEl.textContent = "";
+  resetAllPumps();
+
 
   // Default build inputs (stable)
   caffeineSel.value = "Regular";
@@ -238,15 +280,54 @@ document.getElementById("check").onclick = () => {
     if (milkSel.value !== "None") errors.push('Milk should be "None"');
   }
 
-  // Shots check (only if we could parse)
+  // Shots check
   if (currentOrder.shots != null){
-    if (Number(shotsSel.value) !== Number(currentOrder.shots)) errors.push("Wrong shots");
+    if (Number(shotsSel.value) !== Number(currentOrder.shots)) {
+      errors.push("Wrong shots");
+    }
   }
+
+  /* ===== ADD SYRUP / SAUCE CHECKS HERE ===== */
+
+  const selected = readAllPumps();   // what YOU selected in dropdowns
+
+  const expected = {};
+  for (const ing of (currentOrder.ingredients || [])){
+    expected[ing.code] = ing.amount;
+  }
+
+  // If recipe has NO syrups/sauces
+  if (Object.keys(expected).length === 0){
+    for (const [k,v] of Object.entries(selected)){
+      if (v !== 0){
+        errors.push(`No pumps required, but ${k} = ${v}`);
+      }
+    }
+  } else {
+    // Exact pump match required
+    const ALL_KEYS = [
+      ...SAUCE_KEYS,
+      ...SYRUP_KEYS,
+      ...SIMPLE_KEYS
+    ];
+
+    for (const k of ALL_KEYS){
+      const exp = Number(expected[k] || 0);
+      const got = Number(selected[k] || 0);
+
+      if (Math.abs(exp - got) > 0.01){
+        errors.push(`Pumps ${k}: expected ${exp}, got ${got}`);
+      }
+    }
+  }
+
+  /* ===== END SYRUP CHECKS ===== */
 
   resultEl.textContent = errors.length
     ? "Errors:\n- " + errors.join("\n- ")
     : "Perfect!";
 };
+
 
 // ===== Canvas drawing (smooth + iPad-friendly scaling) =====
 const canvas = document.getElementById("labelCanvas");
