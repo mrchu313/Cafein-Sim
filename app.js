@@ -252,7 +252,6 @@ document.getElementById("newOrder").onclick = () => {
     milkSel.value = "Whole";
   } else {
     milkSel.value = "None";
-    milkSel.disabled = true;
   }
 
   // Shots: if recipe gives a number, set build shots to that (you still must verify)
