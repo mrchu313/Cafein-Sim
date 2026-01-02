@@ -49,36 +49,81 @@ function readAllPumps(){
 
 let currentOrder = null;
 
+function uiSizeToMenuSize(uiVal){
+  // "12oz Hot" -> "Hot 12"
+  // "16oz Iced" -> "Iced 16"
+  const m = String(uiVal).match(/^(\d+)\s*oz\s*(Hot|Iced)$/i);
+  if (!m) return null;
+  const oz = m[1];
+  const temp = m[2][0].toUpperCase() + m[2].slice(1).toLowerCase(); // Hot/Iced
+  return `${temp} ${oz}`;
+}
+
+function menuSizeToUiSize(menuKey){
+  // "Hot 12" -> "12oz Hot"
+  // "Iced 20" -> "20oz Iced"
+  const m = String(menuKey).match(/^(Hot|Iced)\s*(\d+)$/i);
+  if (!m) return null;
+  const temp = m[1][0].toUpperCase() + m[1].slice(1).toLowerCase();
+  const oz = m[2];
+  return `${oz}oz ${temp}`;
+}
+
+function uiSizeLabel(uiVal){
+  // For ticket display: Size (Small/Large), Temp (Hot/Iced)
+  const m = String(uiVal).match(/^(\d+)\s*oz\s*(Hot|Iced)$/i);
+  if (!m) return { size:null, temp:null };
+  const oz = Number(m[1]);
+  const temp = m[2][0].toUpperCase() + m[2].slice(1).toLowerCase();
+  const size = (oz === 12 || oz === 16) ? "Small" : "Large";
+  return { size, temp };
+}
+
 // ===== Helpers =====
-function pickRandom(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+function randomOrder(){
+  const item = pickRandom(MENU_ITEMS);
 
-const CAFFEINE_WEIGHTED = ["Regular","Regular","Regular","Half Caf","Decaf"];
+  // menu size keys like "Hot 12", "Iced 16"
+  const menuSizeKeys = Object.keys(item.sizes);
 
-// Parse "2 SHOTS", "1 SHOT", "SOLO" out of a recipe string
-function parseShots(recipeText){
-  if (!recipeText) return null;
-  const t = String(recipeText).toUpperCase();
+  // convert to UI keys like "12oz Hot", "16oz Iced"
+  const uiSizeKeys = menuSizeKeys
+    .map(menuSizeToUiSize)
+    .filter(Boolean);
 
-  let best = null;
+  const uiSize = pickRandom(uiSizeKeys);
 
-  // 2 SHOTS / 3 SHOTS
-  const m1 = [...t.matchAll(/(\d+(\.\d+)?)\s*SHOTS?/g)];
-  for (const m of m1){
-    const v = Number(m[1]);
-    if (!Number.isNaN(v)) best = Math.max(best ?? 0, v);
-  }
+  // convert back to menu key so we can pull correct recipe
+  const menuSize = uiSizeToMenuSize(uiSize);
 
-  // 1 SHOT
-  const m2 = [...t.matchAll(/(\d+)\s*SHOT\b/g)];
-  for (const m of m2){
-    const v = Number(m[1]);
-    if (!Number.isNaN(v)) best = Math.max(best ?? 0, v);
-  }
+  const recipeText = item.sizes[menuSize];   // correct recipe from sheet
 
-  // SOLO = single shot
-  if (t.includes("SOLO")) best = Math.max(best ?? 0, 1);
+  const caffeine = pickRandom(CAFFEINE_WEIGHTED);
 
-  return best == null ? null : Math.round(best);
+  const needsMilk = recipeNeedsMilk(recipeText);
+  const milk = needsMilk ? "Whole" : "None";
+
+  const extraShot = Math.random() < 0.25;
+
+  const baseShots = parseShots(recipeText);
+  const shots = baseShots == null ? null : baseShots + (extraShot ? 1 : 0);
+
+  const ingredients = parseIngredients(recipeText);
+
+  return {
+    itemName: item.name,
+    abbrev: item.abbrev || "",
+    // store UI size for ticket + user matching
+    size: uiSize,
+    // store menu size for recipe lookups (optional but useful)
+    menuSize,
+    recipeText,
+    caffeine,
+    milk,
+    extraShot,
+    shots,
+    ingredients
+  };
 }
 
 // Extract syrup/sauce pumps when explicitly specified (not perfect, but matches your sheet for the drinks that list pumps)
@@ -463,15 +508,37 @@ function renderTicket(){
     return;
   }
 
+  const { size, temp } = uiSizeLabel(currentOrder.size);
 
-  ticketEl.textContent =
+  const lines = [];
+  lines.push(`Size: ${size}`);             // Small / Large
+  lines.push(`Temp: ${temp}`);             // Hot / Iced
+
+  // caffeine (if applicable) — you currently apply it to all, so show it
+  lines.push(`Caffeine: ${currentOrder.caffeine}`);
+
+  lines.push(`Drink: ${currentOrder.itemName}`);
+
+  // milk (if applicable)
+  if (currentOrder.milk !== "None") {
+    lines.push(`Milk: ${currentOrder.milk}`);
+  }
+
+  // extra shot(s) (if applicable)
+  if (currentOrder.extraShot) {
+    lines.push(`Extra Shot: Yes`);
+  }
+
+  ticketEl.textContent = lines.join("\n");
+}
+
 `ORDER:
 Drink: ${currentOrder.itemName}
 Size: ${currentOrder.size}
 Milk: ${currentOrder.milk}
 Caffeine: ${currentOrder.caffeine}` +
 `\nShots: ${currentOrder.shots ?? "(n/a)"}`;
-}
+
 
 // ===== Buttons =====
 document.getElementById("newOrder").onclick = () => {
