@@ -4,6 +4,8 @@ const resultEl = document.getElementById("result");
 const sizeSel = document.getElementById("size");
 const shotsSel = document.getElementById("shots");
 const milkSel = document.getElementById("milk");
+const caffeineSel = document.getElementById("caffeine");
+
 
 let currentOrder = null;
 
@@ -12,22 +14,27 @@ function randomOrder() {
   const sizes = ["Hot 12","Hot 16","Iced 16","Iced 20"];
   const milks = ["Whole","2%","Oat","Almond","Skim"];
   const shotsBySize = { "Hot 12":2,"Hot 16":2,"Iced 16":2,"Iced 20":3 };
+  const caffeineOptions = ["Regular","Regular","Regular","Half Caf","Decaf"]; // weighted to Regular
 
   const size = sizes[Math.floor(Math.random()*sizes.length)];
   return {
     size,
     milk: milks[Math.floor(Math.random()*milks.length)],
-    shots: shotsBySize[size]
+    shots: shotsBySize[size],
+    caffeine: caffeineOptions[Math.floor(Math.random()*caffeineOptions.length)]
   };
 }
+
 
 function renderTicket() {
   if (!currentOrder) return;
   ticketEl.textContent =
 `ORDER:
 ${currentOrder.size}
+Caffeine: ${currentOrder.caffeine}
 Milk: ${currentOrder.milk}
 Shots: ${currentOrder.shots}`;
+
 }
 
 // --- Buttons ---
@@ -44,6 +51,7 @@ document.getElementById("check").onclick = () => {
   if (sizeSel.value !== currentOrder.size) errors.push("Wrong size");
   if (milkSel.value !== currentOrder.milk) errors.push("Wrong milk");
   if (+shotsSel.value !== currentOrder.shots) errors.push("Wrong shots");
+  if (caffeineSel.value !== currentOrder.caffeine) errors.push("Wrong caffeine");
 
   resultEl.textContent = errors.length
     ? "Errors:\n- " + errors.join("\n- ")
