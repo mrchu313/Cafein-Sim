@@ -50,29 +50,59 @@ document.getElementById("check").onclick = () => {
     : "Perfect!";
 };
 
-// --- Canvas drawing ---
+// --- Canvas drawing (smooth + iPad-friendly scaling) ---
 const canvas = document.getElementById("labelCanvas");
 const ctx = canvas.getContext("2d");
 
 function resize() {
-  canvas.width = canvas.offsetWidth;
-  canvas.height = canvas.offsetHeight;
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+
+  canvas.width = Math.floor(rect.width * dpr);
+  canvas.height = Math.floor(rect.height * dpr);
+
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.scale(dpr, dpr);
+
+  // drawing style defaults
+  ctx.strokeStyle = "#111";
+  ctx.lineWidth = 3;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
 }
 resize();
 window.addEventListener("resize", resize);
 
 let drawing = false;
-canvas.onpointerdown = e => {
+
+canvas.addEventListener("pointerdown", (e) => {
+  canvas.setPointerCapture(e.pointerId);
   drawing = true;
+  ctx.beginPath();
   ctx.moveTo(e.offsetX, e.offsetY);
-};
-canvas.onpointermove = e => {
+  e.preventDefault();
+});
+
+canvas.addEventListener("pointermove", (e) => {
   if (!drawing) return;
+
+  // Pencil pressure support (works on iPad)
+  const pressure = (e.pointerType === "pen") ? Math.max(0.1, e.pressure || 0.5) : 0.6;
+  ctx.lineWidth = 2 + pressure * 6;
+
   ctx.lineTo(e.offsetX, e.offsetY);
   ctx.stroke();
-};
-canvas.onpointerup = () => drawing = false;
+  e.preventDefault();
+});
 
-document.getElementById("clearLabel").onclick = () => {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-};
+function end(e){
+  drawing = false;
+  e.preventDefault();
+}
+canvas.addEventListener("pointerup", end);
+canvas.addEventListener("pointercancel", end);
+
+document.getElementById("clearLabel").addEventListener("click", () => {
+  const r = canvas.getBoundingClientRect();
+  ctx.clearRect(0,0,r.width,r.height);
+});
