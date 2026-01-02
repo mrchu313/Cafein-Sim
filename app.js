@@ -149,7 +149,6 @@ const MENU_ITEMS = [
   {"name":"AMERICANO","abbrev":"A","sizes":{"Hot 12":"9OZ HOT WATER + 2 SHOTS","Hot 16":"13OZ HOT WATER + 2 SHOTS","Iced 16":"8OZ WATER + 2 SHOTS + ICE","Iced 20":"10OZ WATER + 3 SHOTS + ICE"}},
   {"name":"CAPPUCCINO**","abbrev":"CAP","sizes":{"Hot 12":"2 SHOTS + STEAMED FOAM MILK","Hot 16":"2 SHOTS + STEAMED FOAM MILK"}},
   {"name":"LATTE (FLAT WHITE)","abbrev":"L (FW)","sizes":{"Hot 12":"2 SHOTS + STEAMED MILK","Hot 16":"2 SHOTS + STEAMED MILK","Iced 16":"8OZ MILK + 2 SHOTS + ICE","Iced 20":"10OZ MILK + 3 SHOTS + ICE"}},
-  {"name":"FLAVORED LATTE","abbrev":"(FLAVOR) L","sizes":{"Hot 12":"2 SYRUPS + 2 SHOTS + STEAMED MILK","Hot 16":"2.5 SYRUP + 2 SHOTS + STEAMED MILK","Iced 16":"2.5 SYRUP + 8OZ MILK + 2 SHOTS + ICE","Iced 20":"3 SYRUP + 10OZ MILK + 3 SHOTS + ICE"}},
   {"name":"MOCHA LATTE","abbrev":"ML","sizes":{"Hot 12":"2 M SAUCE + 2 SHOTS + STEAMED MILK + WC?","Hot 16":"2.5 M SAUCE + 2 SHOTS + STEAMED MILK + WC?","Iced 16":"2 M SAUCE + 8OZ MILK + 2 SHOTS + ICE + WC?","Iced 20":"2.5 M SAUCE + 10OZ MILK + 3 SHOTS + ICE + WC?"}},
   {"name":"WHITE MOCHA LATTE","abbrev":"WML","sizes":{"Hot 12":"2 WM + 2 SHOTS + STEAMED MILK + WC?","Hot 16":"2.5 WM + 2 SHOTS + STEAMED MILK + WC?","Iced 16":"2 WM + 8OZ MILK + 2 SHOTS + ICE + WC?","Iced 20":"2.5 WM + 10OZ MILK + 3 SHOTS + ICE + WC?"}},
   {"name":"CARAMEL LATTE","abbrev":"CL","sizes":{"Hot 12":"2 CARAMEL SAUCE + 2 SHOTS + STEAMED MILK + WC?","Hot 16":"2.5 CARAMEL SAUCE + 2 SHOTS + STEAMED MILK + WC?","Iced 16":"2 CARAMEL SAUCE + 8OZ MILK + 2 SHOTS + ICE + WC?","Iced 20":"2.5 CARAMEL SAUCE + 10OZ MILK + 3 SHOTS + ICE + WC?"}},
@@ -184,6 +183,8 @@ const MENU_ITEMS = [
 // ===== Order generation from full menu =====
 function randomOrder(){
   const item = pickRandom(MENU_ITEMS);
+  console.log("Picked:", item.name, Object.keys(item.sizes));
+
 
   const sizeKeys = Object.keys(item.sizes);
   const size = pickRandom(sizeKeys);
