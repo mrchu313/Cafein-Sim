@@ -136,7 +136,6 @@ function parseIngredients(recipeText){
     { key: "ROSE", name: "Rose", code: "ROSE" },
     { key: "PUMPKIN", name: "Pumpkin Sauce", code: "PUMPKIN" },
     { key: "BUTTERSCOTCH", name: "Butterscotch", code: "BS" },
-    { key: " BS ", name: "Butterscotch", code: "BS" },
   ];
 
   // Match patterns like:
