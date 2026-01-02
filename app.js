@@ -11,16 +11,35 @@ let currentOrder = null;
 
 // --- Orders ---
 function randomOrder() {
+  const bases = ["Latte","Latte","Latte","Americano","Espresso","Expressoda"]; // weighted
   const sizes = ["Hot 12","Hot 16","Iced 16","Iced 20"];
   const milks = ["Whole","2%","Oat","Almond","Skim"];
-  const shotsBySize = { "Hot 12":2,"Hot 16":2,"Iced 16":2,"Iced 20":3 };
-  const caffeineOptions = ["Regular","Regular","Regular","Half Caf","Decaf"]; // weighted to Regular
+  const caffeineOptions = ["Regular","Regular","Regular","Half Caf","Decaf"];
 
-  const size = sizes[Math.floor(Math.random()*sizes.length)];
+  const base = bases[Math.floor(Math.random()*bases.length)];
+
+  // size constraints (simple + realistic)
+  let allowedSizes = sizes;
+  if (base === "Espresso") allowedSizes = ["Hot 12","Hot 16"];
+  if (base === "Expressoda") allowedSizes = ["Iced 16","Iced 20"];
+
+  const size = allowedSizes[Math.floor(Math.random()*allowedSizes.length)];
+
+  const shotsByBaseAndSize = {
+    Latte: { "Hot 12":2,"Hot 16":2,"Iced 16":2,"Iced 20":3 },
+    Americano: { "Hot 12":2,"Hot 16":2,"Iced 16":2,"Iced 20":3 },
+    Espresso: { "Hot 12":2},
+    Expressoda: {"Iced 20":3 }
+  };
+
+  const needsMilk = (base === "Latte");
+  const milk = needsMilk ? milks[Math.floor(Math.random()*milks.length)] : "None";
+
   return {
+    base,
     size,
-    milk: milks[Math.floor(Math.random()*milks.length)],
-    shots: shotsBySize[size],
+    milk,
+    shots: shotsByBaseAndSize[base][size],
     caffeine: caffeineOptions[Math.floor(Math.random()*caffeineOptions.length)]
   };
 }
@@ -28,14 +47,18 @@ function randomOrder() {
 
 function renderTicket() {
   if (!currentOrder) return;
+
+  const needsMilk = (currentOrder.base === "Latte");
+
   ticketEl.textContent =
 `ORDER:
-${currentOrder.size}
-Caffeine: ${currentOrder.caffeine}
-Milk: ${currentOrder.milk}
-Shots: ${currentOrder.shots}`;
-
+Drink: ${currentOrder.base}
+Size: ${currentOrder.size}
+Caffeine: ${currentOrder.caffeine}` +
+(needsMilk ? `\nMilk: ${currentOrder.milk}` : ``) +
+`\nShots: ${currentOrder.shots}`;
 }
+
 
 // --- Buttons ---
 document.getElementById("newOrder").onclick = () => {
@@ -44,10 +67,18 @@ document.getElementById("newOrder").onclick = () => {
   resultEl.textContent = "";
 
   // Default build inputs
+  if (currentOrder.base === "Latte") {
+    milkSel.disabled = false;
+    milkSel.value = "Whole";
+  } else {
+    milkSel.value = "None";
+    milkSel.disabled = true;
+  }
   milkSel.value = "Whole";
   caffeineSel.value = "Regular";
   shotsSel.value = "2";
   sizeSel.value = "Hot 12";
+  
 };
 
 document.getElementById("check").onclick = () => {
@@ -55,9 +86,14 @@ document.getElementById("check").onclick = () => {
 
   const errors = [];
   if (sizeSel.value !== currentOrder.size) errors.push("Wrong size");
-  if (milkSel.value !== currentOrder.milk) errors.push("Wrong milk");
   if (+shotsSel.value !== currentOrder.shots) errors.push("Wrong shots");
   if (caffeineSel.value !== currentOrder.caffeine) errors.push("Wrong caffeine");
+  const needsMilk = (currentOrder.base === "Latte");
+  if (needsMilk) {
+    if (milkSel.value !== currentOrder.milk) errors.push("Wrong milk");
+  } else {
+    if (milkSel.value !== "None") errors.push('Milk should be "None"');
+  }
 
   resultEl.textContent = errors.length
     ? "Errors:\n- " + errors.join("\n- ")
