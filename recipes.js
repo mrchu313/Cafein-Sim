@@ -1,4 +1,4 @@
-import { FLAVORS, SYRUP_KEYS, prettySize, orderName, targetsFor } from "./data.js";
+import { FLAVORS, SYRUP_KEYS, SIZE_KEYS, prettySize, orderName, targetsFor } from "./data.js";
 
 const qEl = document.getElementById("q");
 const baseFilterEl = document.getElementById("baseFilter");
@@ -14,8 +14,6 @@ const flashPane = document.getElementById("flashPane");
 const newCardBtn = document.getElementById("newCard");
 const revealBtn = document.getElementById("reveal");
 const flashcardEl = document.getElementById("flashcard");
-
-const SIZE_KEYS = ["Hot 12","Hot 16","Iced 16","Iced 20"];
 
 // Build recipe catalog from base + flavors
 function buildCatalog() {
@@ -33,15 +31,14 @@ function buildCatalog() {
   // Americano (no flavors)
   for (const size of SIZE_KEYS) items.push({ base: "Americano", flavor: "None", size });
 
-  // Espresso (typically hot only; keep sizes consistent if you want)
+  // Espresso (hot only)
   for (const size of ["Hot 12", "Hot 16"]) items.push({ base: "Espresso", flavor: "None", size });
 
-  // Expressoda (typically iced only)
+  // Expressoda (iced only)
   for (const size of ["Iced 16", "Iced 20"]) items.push({ base: "Expressoda", flavor: "None", size });
 
   return items;
 }
-
 
 const CATALOG = buildCatalog();
 
@@ -64,9 +61,12 @@ function matches(item) {
   if (flavorF !== "All" && item.flavor !== flavorF) return false;
 
   if (q) {
-    if (!name.includes(q) && !size.includes(q) && !item.base.toLowerCase().includes(q) && !item.flavor.toLowerCase().includes(q)) {
-      return false;
-    }
+    if (
+      !name.includes(q) &&
+      !size.includes(q) &&
+      !item.base.toLowerCase().includes(q) &&
+      !item.flavor.toLowerCase().includes(q)
+    ) return false;
   }
   return true;
 }
@@ -108,22 +108,18 @@ function renderList() {
     });
     listEl.appendChild(div);
 
-    // auto-select first item if none selected
     if (idx === 0 && !selected) {
       selected = item;
       renderDetails(item);
     }
   });
 
-  if (!items.length) {
-    detailsEl.textContent = "(No matches.)";
-  }
+  if (!items.length) detailsEl.textContent = "(No matches.)";
 }
 
 qEl.addEventListener("input", renderList);
 baseFilterEl.addEventListener("change", renderList);
 flavorFilterEl.addEventListener("change", renderList);
-
 
 // Mode toggle
 function setMode(mode) {
@@ -148,7 +144,6 @@ let currentCard = null;
 let revealed = false;
 
 function randomCard() {
-  // Only quiz latte-flavors + americanos (everything)
   return CATALOG[Math.floor(Math.random() * CATALOG.length)];
 }
 
@@ -157,6 +152,7 @@ function renderCard() {
     flashcardEl.textContent = "(Press “New Card”)";
     return;
   }
+
   if (!revealed) {
     flashcardEl.textContent =
 `${orderName(currentCard.base, currentCard.flavor)}
@@ -180,6 +176,7 @@ ${syrupLines(t.syrups)}`;
 newCardBtn.addEventListener("click", () => {
   currentCard = randomCard();
   revealed = false;
+  revealBtn.textContent = "Reveal";
   renderCard();
 });
 
@@ -190,5 +187,6 @@ revealBtn.addEventListener("click", () => {
   renderCard();
 });
 
-// Start in browse mode
+// Start
 setMode("browse");
+renderList();
