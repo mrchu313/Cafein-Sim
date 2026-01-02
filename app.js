@@ -81,13 +81,6 @@ function parseShots(recipeText){
   return best == null ? null : Math.round(best);
 }
 
-// Detect whether milk is required by recipe text
-function recipeNeedsMilk(recipeText){
-  if (!recipeText) return false;
-  const t = String(recipeText).toUpperCase();
-  return t.includes("MILK");
-}
-
 // Extract syrup/sauce pumps when explicitly specified (not perfect, but matches your sheet for the drinks that list pumps)
 // Codes are internal; we’ll show nicer names later in UI.
 function parseIngredients(recipeText){
@@ -198,8 +191,6 @@ function randomOrder(){
   const recipeText = item.sizes[size];
   const caffeine = pickRandom(CAFFEINE_WEIGHTED);
 
-  const needsMilk = recipeNeedsMilk(recipeText);
-  const milk = needsMilk ? "Whole" : "None";
 
   const shots = parseShots(recipeText);
 
@@ -223,14 +214,12 @@ function renderTicket(){
     return;
   }
 
-  const needsMilk = recipeNeedsMilk(currentOrder.recipeText);
 
   ticketEl.textContent =
 `ORDER:
 Drink: ${currentOrder.itemName}
 Size: ${currentOrder.size}
 Caffeine: ${currentOrder.caffeine}` +
-(needsMilk ? `\nMilk: ${currentOrder.milk}` : ``) +
 `\nShots: ${currentOrder.shots ?? "(n/a)"}`;
 }
 
@@ -246,13 +235,6 @@ document.getElementById("newOrder").onclick = () => {
   caffeineSel.value = "Regular";
   sizeSel.value = currentOrder.size;
 
-  const needsMilk = recipeNeedsMilk(currentOrder.recipeText);
-  if (needsMilk){
-    milkSel.disabled = false;
-    milkSel.value = "Whole";
-  } else {
-    milkSel.value = "None";
-  }
 
   // Shots: if recipe gives a number, set build shots to that (you still must verify)
   if (currentOrder.shots != null){
@@ -271,14 +253,7 @@ document.getElementById("check").onclick = () => {
   // Caffeine check
   if (caffeineSel.value !== currentOrder.caffeine) errors.push("Wrong caffeine");
 
-  // Milk rule check
-  const needsMilk = recipeNeedsMilk(currentOrder.recipeText);
-  if (needsMilk){
-    if (milkSel.value !== currentOrder.milk) errors.push("Wrong milk");
-  } else {
-    if (milkSel.value !== "None") errors.push('Milk should be "None"');
-  }
-
+  
   // Shots check
   if (currentOrder.shots != null){
     if (Number(shotsSel.value) !== Number(currentOrder.shots)) {
