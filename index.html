@@ -2,153 +2,66 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Cafein Sim</title>
-  <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="title">Cafein Sim</div>
-    <div class="headerBtns">
-      <button id="newOrder" class="primary">New Order</button>
-      <button id="toggleRecipe">Show Recipe</button>
-    </div>
-  </header>
 
-  <main class="layout">
-    <section class="panel">
-      <div class="panelTitle">Ticket</div>
-      <pre id="ticket" class="paper">(Press “New Order”)</pre>
+<header class="topbar">
+  <div class="title">Cafein Sim</div>
+  <div class="headerBtns">
+    <button id="newOrder" class="primary">New Order</button>
+    <button id="check">Submit</button>
+  </div>
+</header>
 
-      <div class="panelTitle" style="margin-top:14px;">Recipe (hidden by default)</div>
-      <pre id="recipeBox" class="paper hidden"></pre>
+<main class="layout">
+  <section class="panel">
+    <h3>Order Ticket</h3>
+    <pre id="ticket">(Press New Order)</pre>
+    <pre id="result"></pre>
+  </section>
 
-      <div class="panelTitle" style="margin-top:14px;">Result</div>
-      <pre id="result" class="paper"></pre>
-    </section>
+  <section class="panel">
+    <h3>Write on Cup</h3>
+    <canvas id="labelCanvas"></canvas>
+    <button id="clearLabel">Clear</button>
+  </section>
 
-    <section class="panel">
-      <div class="panelTitle">Cup Label (write here)</div>
-      <canvas id="labelCanvas"></canvas>
+  <section class="panel">
+    <h3>Build</h3>
 
-      <div class="row">
-        <button id="clearLabel">Clear</button>
-        <button id="check" class="primary">Submit / Check</button>
-      </div>
+    <label>Size
+      <select id="size">
+        <option value="Hot 12">Hot Small</option>
+        <option value="Hot 16">Hot Large</option>
+        <option value="Iced 16">Iced Small</option>
+        <option value="Iced 20">Iced Large</option>
+      </select>
+    </label>
 
-      <div class="note">
-        Write your shorthand on the cup. Recipe stays hidden unless you press “Show Recipe.”
-      </div>
-    </section>
+    <label>Shots
+      <select id="shots">
+        <option>1</option>
+        <option selected>2</option>
+        <option>3</option>
+        <option>4</option>
+      </select>
+    </label>
 
-    <section class="panel">
-      <div class="panelTitle">Build Inputs</div>
+    <label>Milk
+      <select id="milk">
+        <option>Whole</option>
+        <option>2%</option>
+        <option>Oat</option>
+        <option>Almond</option>
+        <option>Skim</option>
+      </select>
+    </label>
+  </section>
+</main>
 
-      <label class="field">Size
-        <select id="size">
-          <option value="Hot 12">Hot – Small</option>
-          <option value="Hot 16">Hot – Large</option>
-          <option value="Iced 16">Iced – Small</option>
-          <option value="Iced 20">Iced – Large</option>
-        </select>
-      </label>
-
-      <label class="field">Shots
-        <select id="shots">
-          <option value="0">0</option>
-          <option value="1">1</option>
-          <option value="2" selected>2</option>
-          <option value="3">3</option>
-          <option value="4">4</option>
-        </select>
-      </label>
-
-      <label class="field">Flavor (for flavored lattes)
-        <select id="flavor">
-          <option value="None">None</option>
-          <option value="Mocha">Mocha</option>
-          <option value="White Mocha">White Mocha</option>
-          <option value="Caramel">Caramel</option>
-          <option value="Vanilla">Vanilla</option>
-          <option value="Lavender">Lavender</option>
-          <option value="Rose">Rose</option>
-          <option value="Honey Cinnamon">Honey Cinnamon</option>
-          <option value="Other Flavor">Other Flavor</option>
-        </select>
-      </label>
-
-      <div class="twoCol">
-        <label class="field">Caffeine
-          <select id="caffeine">
-            <option value="Regular">Regular</option>
-            <option value="Half Caf">Half Caf</option>
-            <option value="Decaf">Decaf</option>
-          </select>
-        </label>
-
-        <label class="field">Extra Shot
-          <select id="extraShot">
-            <option value="No">No</option>
-            <option value="Yes">Yes</option>
-          </select>
-        </label>
-      </div>
-
-      <label class="field">Milk
-        <select id="milk">
-          <option>2%</option>
-          <option>Whole</option>
-          <option>Oat</option>
-          <option>Almond</option>
-          <option>Skim</option>
-        </select>
-      </label>
-
-      <div class="panelTitle" style="margin-top:10px;">Sauces / Syrups</div>
-      <div class="syrupGrid">
-        <label class="miniField">Mocha (M)
-          <select id="syrup_M"></select>
-        </label>
-
-        <label class="miniField">White Mocha (WM)
-          <select id="syrup_WM"></select>
-        </label>
-
-        <label class="miniField">Caramel Sauce (CAR)
-          <select id="syrup_CAR"></select>
-        </label>
-
-        <label class="miniField">Vanilla (V)
-          <select id="syrup_V"></select>
-        </label>
-
-        <label class="miniField">Simple
-          <select id="syrup_SIMPLE"></select>
-        </label>
-
-        <label class="miniField">Honey
-          <select id="syrup_HONEY"></select>
-        </label>
-
-        <label class="miniField">Rose
-          <select id="syrup_ROSE"></select>
-        </label>
-
-        <label class="miniField">Lavender
-          <select id="syrup_LAV"></select>
-        </label>
-
-        <label class="miniField">Flavor Syrup (generic)
-          <select id="syrup_FLAVOR"></select>
-        </label>
-      </div>
-
-      <div class="note">
-        Set each syrup/sauce amount. Anything not needed should be 0.
-      </div>
-    </section>
-  </main>
-
-  <script src="./app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>

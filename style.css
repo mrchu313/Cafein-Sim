@@ -1,79 +1,44 @@
-:root { --bg:#f6f6f6; --panel:#fff; --border:#e3e3e3; --text:#111; --muted:#666; }
-* { box-sizing: border-box; }
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Segoe UI, Roboto, Arial, sans-serif;
-  background: var(--bg);
-  color: var(--text);
+  font-family: system-ui, sans-serif;
+  background: #f4f4f4;
 }
 
-.topbar{
-  display:flex; justify-content:space-between; align-items:center;
-  padding:14px 16px; background:var(--panel); border-bottom:1px solid var(--border);
-  position:sticky; top:0; z-index:5;
-}
-.title{ font-weight:800; font-size:18px; }
-.headerBtns{ display:flex; gap:10px; }
-
-.layout{
-  display:grid;
-  grid-template-columns: 1.1fr 1.4fr 1.2fr;
-  gap:12px;
-  padding:12px;
-}
-.panel{
-  background:var(--panel);
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:12px;
-  min-height:70vh;
-}
-.panelTitle{ font-weight:800; color:var(--muted); margin-bottom:8px; }
-
-.paper{
-  background:#fbfbfb;
-  border:1px dashed var(--border);
-  border-radius:12px;
-  padding:12px;
-  min-height:160px;
-  white-space:pre-wrap;
-  font-size:16px;
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px;
+  background: white;
+  border-bottom: 1px solid #ddd;
 }
 
-.field{ display:grid; gap:6px; margin-bottom:10px; font-weight:800; color:var(--muted); }
-.field select, .field input{
-  padding:10px 12px; border-radius:12px; border:1px solid var(--border); font-size:16px;
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  padding: 12px;
 }
 
-.miniField{ display:grid; gap:6px; font-weight:800; color:var(--muted); font-size:13px; }
-.miniField select{ padding:10px 12px; border-radius:12px; border:1px solid var(--border); font-size:16px; }
-
-.twoCol{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
-
-button{
-  border:1px solid var(--border);
-  background:#fff;
-  padding:10px 12px;
-  border-radius:12px;
-  font-weight:800;
-}
-button.primary{ background:#111; color:#fff; border-color:#111; }
-.row{ display:flex; gap:10px; margin-top:10px; }
-.note{ margin-top:10px; color:var(--muted); font-size:12px; }
-
-.hidden{ display:none; }
-
-.syrupGrid{
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap:10px;
+.panel {
+  background: white;
+  padding: 12px;
+  border-radius: 10px;
 }
 
-#labelCanvas{
-  width:100%;
-  height:420px;
-  border:2px solid #111;
-  border-radius:14px;
-  background:#fff;
-  touch-action:none;
+canvas {
+  width: 100%;
+  height: 300px;
+  border: 2px solid black;
+  touch-action: none;
+}
+
+button {
+  padding: 8px 12px;
+  margin-top: 8px;
+  font-weight: 600;
+}
+
+button.primary {
+  background: black;
+  color: white;
 }
