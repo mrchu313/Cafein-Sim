@@ -233,13 +233,10 @@ document.getElementById("newOrder").onclick = () => {
 
   // Default build inputs (stable)
   caffeineSel.value = "Regular";
-  sizeSel.value = currentOrder.size;
+  
+  sizeSel.value = "Select";
+  shotsSel.value = "0";
 
-
-  // Shots: if recipe gives a number, set build shots to that (you still must verify)
-  if (currentOrder.shots != null){
-    shotsSel.value = String(currentOrder.shots);
-  }
 };
 
 document.getElementById("check").onclick = () => {
