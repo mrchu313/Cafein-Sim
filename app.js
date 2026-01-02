@@ -42,6 +42,12 @@ document.getElementById("newOrder").onclick = () => {
   currentOrder = randomOrder();
   renderTicket();
   resultEl.textContent = "";
+
+  // Default build inputs
+  milkSel.value = "Whole";
+  caffeineSel.value = "Regular";
+  shotsSel.value = "2";
+  sizeSel.value = "Hot 12";
 };
 
 document.getElementById("check").onclick = () => {
