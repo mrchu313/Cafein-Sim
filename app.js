@@ -5,14 +5,16 @@ const resultEl = document.getElementById("result");
 const sizeSel = document.getElementById("size");
 const shotsSel = document.getElementById("shots");
 const caffeineSel = document.getElementById("caffeine");
+const extraShotSel = document.getElementById("extraShot");
 const milkSel = document.getElementById("milk");
+
 // ===== Syrup/Sauce dropdown refs =====
 const SAUCE_KEYS  = ["M","WM","CAR","PUMPKIN","BS"];
-const SYRUP_KEYS  = ["V","LAV","ROSE","HONEY","FLAVOR"];
+const SYRUP_KEYS  = ["V","LAV","ROSE","HONEY","FLAVOR"]; // FLAVOR is a generic catch if recipe says "SYRUP(S)"
 const SIMPLE_KEYS = ["SIMPLE"];
 
-const sauceEls = Object.fromEntries(SAUCE_KEYS.map(k => [k, document.getElementById(`sauce_${k}`)]));
-const syrupEls = Object.fromEntries(SYRUP_KEYS.map(k => [k, document.getElementById(`syrup_${k}`)]));
+const sauceEls  = Object.fromEntries(SAUCE_KEYS.map(k => [k, document.getElementById(`sauce_${k}`)]));
+const syrupEls  = Object.fromEntries(SYRUP_KEYS.map(k => [k, document.getElementById(`syrup_${k}`)]));
 const simpleEls = Object.fromEntries(SIMPLE_KEYS.map(k => [k, document.getElementById(`simple_${k}`)]));
 
 function populateSelect(sel){
@@ -41,27 +43,27 @@ function resetAllPumps(){
 
 function readAllPumps(){
   const out = {};
-  for (const k of SAUCE_KEYS) out[k] = Number(sauceEls[k]?.value || 0);
-  for (const k of SYRUP_KEYS) out[k] = Number(syrupEls[k]?.value || 0);
+  for (const k of SAUCE_KEYS)  out[k] = Number(sauceEls[k]?.value || 0);
+  for (const k of SYRUP_KEYS)  out[k] = Number(syrupEls[k]?.value || 0);
   for (const k of SIMPLE_KEYS) out[k] = Number(simpleEls[k]?.value || 0);
   return out;
 }
 
-let currentOrder = null;
+// ===== Helpers =====
+function pickRandom(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+const CAFFEINE_WEIGHTED = ["Regular","Regular","Regular","Half Caf","Decaf"];
 
 function uiSizeToMenuSize(uiVal){
-  // "12oz Hot" -> "Hot 12"
-  // "16oz Iced" -> "Iced 16"
+  // "12oz Hot" -> "Hot 12", "16oz Iced" -> "Iced 16"
   const m = String(uiVal).match(/^(\d+)\s*oz\s*(Hot|Iced)$/i);
   if (!m) return null;
   const oz = m[1];
-  const temp = m[2][0].toUpperCase() + m[2].slice(1).toLowerCase(); // Hot/Iced
+  const temp = m[2][0].toUpperCase() + m[2].slice(1).toLowerCase();
   return `${temp} ${oz}`;
 }
 
 function menuSizeToUiSize(menuKey){
-  // "Hot 12" -> "12oz Hot"
-  // "Iced 20" -> "20oz Iced"
+  // "Hot 12" -> "12oz Hot", "Iced 20" -> "20oz Iced"
   const m = String(menuKey).match(/^(Hot|Iced)\s*(\d+)$/i);
   if (!m) return null;
   const temp = m[1][0].toUpperCase() + m[1].slice(1).toLowerCase();
@@ -70,67 +72,52 @@ function menuSizeToUiSize(menuKey){
 }
 
 function uiSizeLabel(uiVal){
-  // For ticket display: Size (Small/Large), Temp (Hot/Iced)
+  // Returns: { size: "Small"/"Large", temp:"Hot"/"Iced" }
   const m = String(uiVal).match(/^(\d+)\s*oz\s*(Hot|Iced)$/i);
-  if (!m) return { size:null, temp:null };
+  if (!m) return { size: null, temp: null };
   const oz = Number(m[1]);
   const temp = m[2][0].toUpperCase() + m[2].slice(1).toLowerCase();
-  const size = (oz === 12 || oz === 16) ? "Small" : "Large";
+
+  // Your rule:
+  // Hot: 12 small, 16 large
+  // Iced: 16 small, 20 large
+  let size = null;
+  if (temp === "Hot") {
+    size = (oz === 12) ? "Small" : (oz === 16 ? "Large" : null);
+  } else {
+    size = (oz === 16) ? "Small" : (oz === 20 ? "Large" : null);
+  }
   return { size, temp };
 }
 
-// ===== Helpers =====
-function randomOrder(){
-  const item = pickRandom(MENU_ITEMS);
-
-  // menu size keys like "Hot 12", "Iced 16"
-  const menuSizeKeys = Object.keys(item.sizes);
-
-  // convert to UI keys like "12oz Hot", "16oz Iced"
-  const uiSizeKeys = menuSizeKeys
-    .map(menuSizeToUiSize)
-    .filter(Boolean);
-
-  const uiSize = pickRandom(uiSizeKeys);
-
-  // convert back to menu key so we can pull correct recipe
-  const menuSize = uiSizeToMenuSize(uiSize);
-
-  const recipeText = item.sizes[menuSize];   // correct recipe from sheet
-
-  const caffeine = pickRandom(CAFFEINE_WEIGHTED);
-
-  const needsMilk = recipeNeedsMilk(recipeText);
-  const milk = needsMilk ? "Whole" : "None";
-
-  const extraShot = Math.random() < 0.25;
-
-  const baseShots = parseShots(recipeText);
-  const shots = baseShots == null ? null : baseShots + (extraShot ? 1 : 0);
-
-  const ingredients = parseIngredients(recipeText);
-
-  return {
-    itemName: item.name,
-    abbrev: item.abbrev || "",
-    // store UI size for ticket + user matching
-    size: uiSize,
-    // store menu size for recipe lookups (optional but useful)
-    menuSize,
-    recipeText,
-    caffeine,
-    milk,
-    extraShot,
-    shots,
-    ingredients
-  };
+function recipeNeedsMilk(recipeText){
+  const t = String(recipeText || "").toUpperCase();
+  // If recipe explicitly includes milk/breve/foam, it needs milk selection.
+  // Drinks like americano/espresso soda won't include MILK.
+  return (
+    t.includes(" MILK") ||
+    t.includes("BREVE") ||
+    t.includes("FOAM")
+  );
 }
 
-// Extract syrup/sauce pumps when explicitly specified (not perfect, but matches your sheet for the drinks that list pumps)
-// Codes are internal; we’ll show nicer names later in UI.
+function parseShots(recipeText){
+  if (!recipeText) return null;
+  const t = String(recipeText).toUpperCase();
+
+  // SOLO ESP = 1
+  if (t.includes("SOLO")) return 1;
+
+  // "2 SHOTS", "3 SHOTS", "1 SHOT"
+  const m = t.match(/(\d+)\s*SHOTS?\b/);
+  if (m) return Number(m[1]);
+
+  return null;
+}
+
+// Extract pumps from recipe text
 function parseIngredients(recipeText){
   if (!recipeText) return [];
-
   const t = String(recipeText).toUpperCase();
   const out = new Map();
 
@@ -139,7 +126,8 @@ function parseIngredients(recipeText){
     { key: "WHITE MOCHA", name: "White Mocha", code: "WM" },
     { key: "M SAUCE", name: "Mocha Sauce", code: "M" },
     { key: "MOCHA", name: "Mocha Sauce", code: "M" },
-    { key: "CARAMEL", name: "Caramel", code: "CAR" },
+    { key: "CAR SAUCE", name: "Caramel Sauce", code: "CAR" },
+    { key: "CARAMEL", name: "Caramel Sauce", code: "CAR" },
     { key: "VANILLA", name: "Vanilla", code: "V" },
     { key: "SIMPLE", name: "Simple Syrup", code: "SIMPLE" },
     { key: "HONEY", name: "Honey", code: "HONEY" },
@@ -148,21 +136,29 @@ function parseIngredients(recipeText){
     { key: "ROSE", name: "Rose", code: "ROSE" },
     { key: "PUMPKIN", name: "Pumpkin Sauce", code: "PUMPKIN" },
     { key: "BUTTERSCOTCH", name: "Butterscotch", code: "BS" },
+    { key: " BS ", name: "Butterscotch", code: "BS" },
   ];
 
-  // Patterns like "1.5 WM", "2 PUMPKIN SAUCE", "4 VANILLA SYRUP", "2 SYRUPS"
-  const matches = [...t.matchAll(/(\d+(\.\d+)?)\s*([A-Z/ ]{1,24})/g)];
+  // Match patterns like:
+  // "2.5 M SAUCE", "1 WM", "4 VANILLA SYRUP", "2 PUMPS SIMPLE", "3.5 HONEY"
+  const matches = [...t.matchAll(/(\d+(\.\d+)?)\s*(PUMPS?\s*)?([A-Z/ ]{1,30})/g)];
   for (const m of matches){
     const amt = Number(m[1]);
-    const word = (m[3] || "").trim();
+    const word = (m[4] || "").trim();
 
-    // ignore obvious non-ingredient tokens
+    if (!Number.isFinite(amt)) continue;
+
+    // ignore common non-ingredient tokens
     if (
-      word.startsWith("OZ") || word.startsWith("CUP") || word.startsWith("SCOOP") ||
-      word.startsWith("SHOT") || word.startsWith("SHOTS") || word.startsWith("WATER") ||
-      word.startsWith("MILK") || word.startsWith("ICE") || word.startsWith("CLUB") ||
-      word.startsWith("STEAMED") || word.startsWith("FOAM") || word.startsWith("POWDER") ||
-      word.startsWith("JUICE") || word.startsWith("BLEND") || word.startsWith("STIR")
+      word.startsWith("OZ") || word.startsWith("ML") || word.startsWith("G") ||
+      word.startsWith("CUP") || word.startsWith("SCOOP") ||
+      word.startsWith("SHOT") || word.startsWith("SHOTS") ||
+      word.startsWith("WATER") || word.startsWith("ICE") ||
+      word.startsWith("STEAMED") || word.startsWith("FOAM") ||
+      word.startsWith("POWDER") || word.startsWith("JUICE") ||
+      word.startsWith("BLEND") || word.startsWith("STIR") ||
+      word.startsWith("CLUB") || word.startsWith("CINN") ||
+      word.startsWith("WC")
     ) continue;
 
     let matched = false;
@@ -176,7 +172,7 @@ function parseIngredients(recipeText){
       }
     }
 
-    // Generic "SYRUP(S)" on your flavored-latte line
+    // Generic "SYRUP/SYRUPS" -> FLAVOR (if your sheet uses generic syrup wording sometimes)
     if (!matched && (word.includes("SYRUP") || word.includes("SYRUPS"))){
       const cur = out.get("FLAVOR") || { code: "FLAVOR", name: "Flavor Syrup", amount: 0 };
       cur.amount = Math.round((cur.amount + amt) * 100) / 100;
@@ -187,12 +183,8 @@ function parseIngredients(recipeText){
   return [...out.values()];
 }
 
-// ===== Menu imported from your Excel (RECIPE sheet) =====
-// Each item has sizes (some missing), and we use the recipe text for shots/milk/ingredients.
+// ===== Menu (newest list you provided) =====
 const MENU_ITEMS = [
-  {
-    
-  },
   {
     "name": "COLD BREW",
     "abbrev": "CB",
@@ -229,7 +221,6 @@ const MENU_ITEMS = [
       "Iced 20": "10OZ MILK + 3 SHOTS + ICE"
     }
   },
-  
   {
     "name": "MOCHA",
     "abbrev": "M",
@@ -390,8 +381,6 @@ const MENU_ITEMS = [
       "Iced 20": "1.5 WM + 2 LAV + 3 SHOTS + 10 OZ MILK + ICE"
     }
   },
-
-  // Cold/iced section (sheet columns represent Iced 16 / Iced 20)
   {
     "name": "CREAM COFFEE",
     "abbrev": "CC",
@@ -469,35 +458,45 @@ const MENU_ITEMS = [
   }
 ];
 
-  // Items listed higher on the sheet (espresso/macchiato/cortado/etc.) exist but were presented as service notes.
-  // We can add them as orderable items cleanly in the next step if you want them randomized too.
-;
+// ===== Order state =====
+let currentOrder = null;
 
-// ===== Order generation from full menu =====
+// ===== Order generation =====
 function randomOrder(){
   const item = pickRandom(MENU_ITEMS);
-  console.log("Picked:", item.name, Object.keys(item.sizes));
 
+  const menuSizeKeys = Object.keys(item.sizes);
+  const uiSizeKeys = menuSizeKeys.map(menuSizeToUiSize).filter(Boolean);
 
-  const sizeKeys = Object.keys(item.sizes);
-  const size = pickRandom(sizeKeys);
+  // Safety: if something is malformed, retry
+  if (!uiSizeKeys.length) return randomOrder();
 
-  const recipeText = item.sizes[size];
+  const uiSize = pickRandom(uiSizeKeys);
+  const menuSize = uiSizeToMenuSize(uiSize);
+  const recipeText = item.sizes[menuSize];
+
   const caffeine = pickRandom(CAFFEINE_WEIGHTED);
 
+  const needsMilk = recipeNeedsMilk(recipeText);
+  const milk = needsMilk ? "Whole" : "None";
 
-  const shots = parseShots(recipeText);
+  const extraShot = Math.random() < 0.25;
 
-  const ingredients = parseIngredients(recipeText); // syrup/sauce pumps if explicitly present
+  const baseShots = parseShots(recipeText);
+  const shots = baseShots == null ? null : baseShots + (extraShot ? 1 : 0);
+
+  const ingredients = parseIngredients(recipeText);
 
   return {
     itemName: item.name,
     abbrev: item.abbrev || "",
-    size,
+    size: uiSize,        // UI size key (what user must match)
+    menuSize,            // menu size key (for recipe lookup)
+    recipeText,
     caffeine,
     milk,
+    extraShot,
     shots,
-    recipeText,
     ingredients
   };
 }
@@ -511,34 +510,16 @@ function renderTicket(){
   const { size, temp } = uiSizeLabel(currentOrder.size);
 
   const lines = [];
-  lines.push(`Size: ${size}`);             // Small / Large
-  lines.push(`Temp: ${temp}`);             // Hot / Iced
-
-  // caffeine (if applicable) — you currently apply it to all, so show it
+  lines.push(`Size: ${size ?? "(?)"}`);
+  lines.push(`Temp: ${temp ?? "(?)"}`);
   lines.push(`Caffeine: ${currentOrder.caffeine}`);
-
   lines.push(`Drink: ${currentOrder.itemName}`);
 
-  // milk (if applicable)
-  if (currentOrder.milk !== "None") {
-    lines.push(`Milk: ${currentOrder.milk}`);
-  }
-
-  // extra shot(s) (if applicable)
-  if (currentOrder.extraShot) {
-    lines.push(`Extra Shot: Yes`);
-  }
+  if (currentOrder.milk !== "None") lines.push(`Milk: ${currentOrder.milk}`);
+  if (currentOrder.extraShot) lines.push(`Extra Shot: Yes`);
 
   ticketEl.textContent = lines.join("\n");
 }
-
-`ORDER:
-Drink: ${currentOrder.itemName}
-Size: ${currentOrder.size}
-Milk: ${currentOrder.milk}
-Caffeine: ${currentOrder.caffeine}` +
-`\nShots: ${currentOrder.shots ?? "(n/a)"}`;
-
 
 // ===== Buttons =====
 document.getElementById("newOrder").onclick = () => {
@@ -547,13 +528,12 @@ document.getElementById("newOrder").onclick = () => {
   resultEl.textContent = "";
   resetAllPumps();
 
-
-  // Default build inputs (stable)
-  caffeineSel.value = "Regular";
-  
+  // Reset user build inputs to neutral defaults (do NOT auto-answer)
   sizeSel.value = "Select";
   shotsSel.value = "0";
-
+  caffeineSel.value = "Regular";
+  extraShotSel.value = "No";
+  milkSel.value = "None";
 };
 
 document.getElementById("check").onclick = () => {
@@ -561,67 +541,70 @@ document.getElementById("check").onclick = () => {
 
   const errors = [];
 
-  // Size check
+  // Size check (user must match UI size string like "12oz Hot")
   if (sizeSel.value !== currentOrder.size) errors.push("Wrong size");
 
   // Caffeine check
   if (caffeineSel.value !== currentOrder.caffeine) errors.push("Wrong caffeine");
 
-  
-  // Shots check
+  // Extra shot check
+  const buildExtra = (extraShotSel.value === "Yes");
+  if (buildExtra !== currentOrder.extraShot) errors.push("Wrong extra shot");
+
+  // Milk rule check
+  const needsMilk = recipeNeedsMilk(currentOrder.recipeText);
+  if (needsMilk) {
+    if (milkSel.value !== currentOrder.milk) errors.push("Wrong milk");
+  } else {
+    if (milkSel.value !== "None") errors.push('Milk should be "None"');
+  }
+
+  // Shots check (only if we could parse)
   if (currentOrder.shots != null){
     if (Number(shotsSel.value) !== Number(currentOrder.shots)) {
       errors.push("Wrong shots");
     }
   }
 
-  /* ===== ADD SYRUP / SAUCE CHECKS HERE ===== */
-
-  const selected = readAllPumps();   // what YOU selected in dropdowns
+  // Pumps check
+  const selected = readAllPumps();
 
   const expected = {};
   for (const ing of (currentOrder.ingredients || [])){
-    expected[ing.code] = ing.amount;
+    expected[ing.code] = Number(ing.amount || 0);
   }
 
-  // If recipe has NO syrups/sauces
+  const ALL_KEYS = [...SAUCE_KEYS, ...SYRUP_KEYS, ...SIMPLE_KEYS];
+
   if (Object.keys(expected).length === 0){
-    for (const [k,v] of Object.entries(selected)){
-      if (v !== 0){
-        errors.push(`No pumps required, but ${k} = ${v}`);
+    for (const k of ALL_KEYS){
+      if (Number(selected[k] || 0) !== 0){
+        errors.push(`No pumps required, but ${k} = ${selected[k]}`);
       }
     }
   } else {
-    // Exact pump match required
-    const ALL_KEYS = [
-      ...SAUCE_KEYS,
-      ...SYRUP_KEYS,
-      ...SIMPLE_KEYS
-    ];
-
     for (const k of ALL_KEYS){
       const exp = Number(expected[k] || 0);
       const got = Number(selected[k] || 0);
-
       if (Math.abs(exp - got) > 0.01){
         errors.push(`Pumps ${k}: expected ${exp}, got ${got}`);
       }
     }
   }
 
-  /* ===== END SYRUP CHECKS ===== */
-
-  resultEl.textContent = errors.length
-    ? "Errors:\n- " + errors.join("\n- ")
-    : "Perfect!";
+  // Output
+  if (errors.length){
+    resultEl.textContent = "Errors:\n- " + errors.join("\n- ");
+  } else {
+    resultEl.textContent = "Perfect!";
+  }
 };
-
 
 // ===== Canvas drawing (smooth + iPad-friendly scaling) =====
 const canvas = document.getElementById("labelCanvas");
 const ctx = canvas.getContext("2d");
 
-function resize(){
+function resizeCanvas(){
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
   canvas.width = Math.floor(rect.width * dpr);
@@ -629,20 +612,26 @@ function resize(){
   ctx.setTransform(1,0,0,1,0,0);
   ctx.scale(dpr, dpr);
   ctx.strokeStyle = "#111";
-  ctx.lineWidth = 3;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
 }
-resize();
-window.addEventListener("resize", resize);
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
+
+function clearCanvas(){
+  const rect = canvas.getBoundingClientRect();
+  ctx.clearRect(0, 0, rect.width, rect.height);
+}
+document.getElementById("clearLabel").addEventListener("click", clearCanvas);
 
 let drawing = false;
+let lastX = 0, lastY = 0;
 
 canvas.addEventListener("pointerdown", (e) => {
   canvas.setPointerCapture(e.pointerId);
   drawing = true;
-  ctx.beginPath();
-  ctx.moveTo(e.offsetX, e.offsetY);
+  lastX = e.offsetX;
+  lastY = e.offsetY;
   e.preventDefault();
 });
 
@@ -650,21 +639,23 @@ canvas.addEventListener("pointermove", (e) => {
   if (!drawing) return;
   const pressure = (e.pointerType === "pen") ? Math.max(0.1, e.pressure || 0.5) : 0.6;
   ctx.lineWidth = 2 + pressure * 6;
+
+  ctx.beginPath();
+  ctx.moveTo(lastX, lastY);
   ctx.lineTo(e.offsetX, e.offsetY);
   ctx.stroke();
+
+  lastX = e.offsetX;
+  lastY = e.offsetY;
   e.preventDefault();
 });
 
-function end(e){
+function endDraw(e){
   drawing = false;
   e.preventDefault();
 }
-canvas.addEventListener("pointerup", end);
-canvas.addEventListener("pointercancel", end);
+canvas.addEventListener("pointerup", endDraw);
+canvas.addEventListener("pointercancel", endDraw);
 
-document.getElementById("clearLabel").addEventListener("click", () => {
-  const r = canvas.getBoundingClientRect();
-  ctx.clearRect(0,0,r.width,r.height);
-});
-
+// Initial render
 renderTicket();
