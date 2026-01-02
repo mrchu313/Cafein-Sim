@@ -219,6 +219,7 @@ function renderTicket(){
 `ORDER:
 Drink: ${currentOrder.itemName}
 Size: ${currentOrder.size}
+Milk: ${currentOrder.milk}
 Caffeine: ${currentOrder.caffeine}` +
 `\nShots: ${currentOrder.shots ?? "(n/a)"}`;
 }
