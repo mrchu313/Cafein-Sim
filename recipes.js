@@ -23,18 +23,25 @@ function buildCatalog() {
 
   // Latte: plain + flavored
   for (const size of SIZE_KEYS) {
-    items.push({ base:"Latte", flavor:"None", size });
+    items.push({ base: "Latte", flavor: "None", size });
     for (const flavor of FLAVORS) {
       if (flavor === "None") continue;
-      items.push({ base:"Latte", flavor, size });
+      items.push({ base: "Latte", flavor, size });
     }
   }
 
-  // Americano (no flavors in this version)
-  for (const size of SIZE_KEYS) items.push({ base:"Americano", flavor:"None", size });
+  // Americano (no flavors)
+  for (const size of SIZE_KEYS) items.push({ base: "Americano", flavor: "None", size });
+
+  // Espresso (typically hot only; keep sizes consistent if you want)
+  for (const size of ["Hot 12", "Hot 16"]) items.push({ base: "Espresso", flavor: "None", size });
+
+  // Expressoda (typically iced only)
+  for (const size of ["Iced 16", "Iced 20"]) items.push({ base: "Expressoda", flavor: "None", size });
 
   return items;
 }
+
 
 const CATALOG = buildCatalog();
 
@@ -113,8 +120,10 @@ function renderList() {
   }
 }
 
-[qEl, baseFilterEl, flavorFilterEl].forEach(el => el.addEventListener("input", renderList));
-renderList();
+qEl.addEventListener("input", renderList);
+baseFilterEl.addEventListener("change", renderList);
+flavorFilterEl.addEventListener("change", renderList);
+
 
 // Mode toggle
 function setMode(mode) {

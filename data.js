@@ -90,8 +90,11 @@ export function abbrevFor(base, flavor) {
   if (base === "Latte" && flavor && flavor !== "None") return FLAVOR_RULES[flavor]?.abbrev || "L";
   if (base === "Latte") return "L";
   if (base === "Americano") return "A";
+  if (base === "Espresso") return "E";
+  if (base === "Expressoda") return "ES"; // espresso soda
   return "";
 }
+
 
 export function targetsFor(base, flavor, sizeKey, extraShot) {
   const baseShots = BASE_SHOTS[base]?.[sizeKey] ?? null;
@@ -123,4 +126,5 @@ export const BASE_RULES = {
   }
 };
 
+export const SIZE_KEYS = ["Hot 12","Hot 16","Iced 16","Iced 20"];
 
